@@ -27,7 +27,7 @@
 
   <main class="container" style="max-width: 900px;">
     <div style="margin-bottom: 1.5rem;">
-      <a href="index.html" class="btn btn-secondary btn-sm">← Back to Job Openings</a>
+      <a href="index.html" class="btn btn-secondary btn-sm" id="backBtn">← Back to Job Openings</a>
     </div>
 
     <!-- Job Specification Card Container -->
@@ -35,89 +35,132 @@
       <div style="text-align: center; padding: 3rem; color: #64748b;">Loading job details...</div>
     </div>
 
-    <!-- Application Form Card -->
+    <!-- Application Form Card / Dynamic Role-Based View -->
     <div id="applySection" class="card-box" style="margin-top: 2rem;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h2 style="font-size: 1.45rem; font-weight: 800; color: #0f172a;">Submit Your Application</h2>
-          <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.2rem;">Complete the verified form below to apply directly to the hiring team.</p>
-        </div>
-        <button type="button" onclick="fillDemoCandidate()" class="btn btn-demo">
-          ✨ Fill Demo Candidate
-        </button>
-      </div>
 
-      <!-- Success Notification Banner -->
-      <div id="successBanner" class="alert-banner alert-success" style="display: none;">
-        <div>
-          <strong>🎉 Application Submitted Successfully!</strong><br />
-          Your profile has been forwarded to the recruiter. You can review your status inside the 
-          <a href="dashboard.html" style="color: #065f46; font-weight: 700; text-decoration: underline;">Recruiter Dashboard</a>.
+      <!-- VIEW 1: GUEST NOTICE (When user is not logged in) -->
+      <div id="guestApplyNotice" style="display: none; text-align: center; padding: 2.25rem 1rem;">
+        <div style="font-size: 2.4rem; margin-bottom: 0.6rem;">🔒</div>
+        <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 0.4rem;">Sign In Required to Apply</h2>
+        <p style="color: #64748b; font-size: 0.95rem; max-width: 480px; margin: 0 auto 1.5rem;">
+          You must be logged in with a Candidate account to submit an application and track recruiter review progress.
+        </p>
+        <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+          <a id="guestLoginBtn" href="login.html" class="btn btn-primary" style="padding: 0.65rem 1.6rem; font-weight: 600;">Sign In to Apply</a>
+          <a href="signup.html" class="btn btn-outline" style="padding: 0.65rem 1.6rem; font-weight: 600;">Create Candidate Account</a>
         </div>
       </div>
 
-      <!-- Application Form with Real-time Client-side Validation -->
-      <form id="candidateApplyForm" novalidate>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Full Name <span class="req">*</span></label>
-            <input type="text" id="name" class="form-control" placeholder="e.g. Pankaj Shinde" required />
-            <span id="err_name" class="field-error-msg"></span>
-          </div>
+      <!-- VIEW 2: RECRUITER / ADMIN VIEW (Cannot apply) -->
+      <div id="recruiterApplyNotice" style="display: none; text-align: center; padding: 2.25rem 1rem; background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">💼</div>
+        <h3 id="recruiterNoticeTitle" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 0.4rem;">
+          Recruiter View
+        </h3>
+        <p style="color: #64748b; font-size: 0.92rem; max-width: 520px; margin: 0 auto 1.25rem;">
+          Recruiter and Administrator accounts manage job postings and candidate pipelines. Only Candidate accounts can apply for jobs.
+        </p>
+        <a href="dashboard.html" class="btn btn-secondary btn-sm" style="font-weight: 600;">
+          ← Go to Dashboard
+        </a>
+      </div>
 
-          <div class="form-group">
-            <label class="form-label">Email Address <span class="req">*</span></label>
-            <input type="email" id="email" class="form-control" placeholder="e.g. pankajshinde0409@gmail.com" required />
-            <span id="err_email" class="field-error-msg"></span>
+      <!-- VIEW 3: ALREADY APPLIED NOTICE -->
+      <div id="alreadyAppliedNotice" style="display: none; text-align: center; padding: 2.25rem 1rem; background: #ecfdf5; border-radius: 12px; border: 1px solid #a7f3d0;">
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">✅</div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #065f46; margin-bottom: 0.4rem;">Application Already Submitted</h3>
+        <p id="alreadyAppliedStatusText" style="color: #047857; font-size: 0.92rem; max-width: 500px; margin: 0 auto 1.25rem;">
+          You have already applied for this opening.
+        </p>
+        <a href="dashboard.html" class="btn btn-primary btn-sm" style="font-weight: 600;">
+          Track in My Applications →
+        </a>
+      </div>
+
+      <!-- VIEW 4: ACTIVE APPLICATION FORM (Candidate only) -->
+      <div id="candidateFormWrapper" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.45rem; font-weight: 800; color: #0f172a;">Submit Your Application</h2>
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.2rem;">Complete the verified form below to apply directly to the hiring team.</p>
+          </div>
+          <button type="button" onclick="fillDemoCandidate()" class="btn btn-demo">
+            ✨ Fill Demo Candidate
+          </button>
+        </div>
+
+        <!-- Success Notification Banner -->
+        <div id="successBanner" class="alert-banner alert-success" style="display: none;">
+          <div>
+            <strong>🎉 Application Submitted Successfully!</strong><br />
+            Your profile has been forwarded to the recruiter. You can review your status inside 
+            <a href="dashboard.html" style="color: #065f46; font-weight: 700; text-decoration: underline;">My Applications</a>.
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">10-Digit Mobile Number <span class="req">*</span></label>
-            <input type="tel" id="phone" class="form-control" placeholder="e.g. 9823456789" required />
-            <span id="err_phone" class="field-error-msg"></span>
+        <!-- Application Form with Real-time Client-side Validation -->
+        <form id="candidateApplyForm" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Full Name <span class="req">*</span></label>
+              <input type="text" id="name" class="form-control" placeholder="e.g. Pankaj Shinde" required />
+              <span id="err_name" class="field-error-msg"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email Address <span class="req">*</span></label>
+              <input type="email" id="email" class="form-control" placeholder="e.g. candidate@demo.com" required readonly style="background-color: #f8fafc; cursor: not-allowed;" />
+              <span id="err_email" class="field-error-msg"></span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">10-Digit Mobile Number <span class="req">*</span></label>
+              <input type="tel" id="phone" class="form-control" placeholder="e.g. 9823456789" required />
+              <span id="err_phone" class="field-error-msg"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Highest Qualification <span class="req">*</span></label>
+              <select id="qualification" class="form-control" required>
+                <option value="">Select qualification</option>
+                <option value="B.Tech in Software Engineering">B.Tech in Software Engineering</option>
+                <option value="B.E. Computer Technology / IT">B.E. Computer Technology / IT</option>
+                <option value="Bachelor of Computer Applications (BCA)">Bachelor of Computer Applications (BCA)</option>
+                <option value="Master of Computer Applications (MCA)">Master of Computer Applications (MCA)</option>
+                <option value="M.Tech Computer Science">M.Tech Computer Science</option>
+                <option value="Diploma in Engineering">Diploma in Engineering</option>
+              </select>
+              <span id="err_qualification" class="field-error-msg"></span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Years of Experience <span class="req">*</span></label>
+              <input type="number" id="experience" class="form-control" placeholder="e.g. 2 (or 0 for Fresher)" min="0" max="50" required />
+              <span id="err_experience" class="field-error-msg"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Online Portfolio / Resume URL <span style="font-weight:400; color:#64748b;">(Optional)</span></label>
+              <input type="url" id="resumeUrl" class="form-control" placeholder="https://pankajshinde.dev/resume.pdf" />
+              <span id="err_resumeUrl" class="field-error-msg"></span>
+            </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Highest Qualification <span class="req">*</span></label>
-            <select id="qualification" class="form-control" required>
-              <option value="">Select qualification</option>
-              <option value="B.Tech in Software Engineering">B.Tech in Software Engineering</option>
-              <option value="B.E. Computer Technology / IT">B.E. Computer Technology / IT</option>
-              <option value="Bachelor of Computer Applications (BCA)">Bachelor of Computer Applications (BCA)</option>
-              <option value="Master of Computer Applications (MCA)">Master of Computer Applications (MCA)</option>
-              <option value="M.Tech Computer Science">M.Tech Computer Science</option>
-              <option value="Diploma in Engineering">Diploma in Engineering</option>
-            </select>
-            <span id="err_qualification" class="field-error-msg"></span>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Years of Experience <span class="req">*</span></label>
-            <input type="number" id="experience" class="form-control" placeholder="e.g. 2 (or 0 for Fresher)" min="0" max="50" required />
-            <span id="err_experience" class="field-error-msg"></span>
+            <label class="form-label">Cover Letter / Note to Hiring Manager</label>
+            <textarea id="coverLetter" class="form-control" rows="4" placeholder="Briefly highlight why your technical skills match this opening..."></textarea>
+            <div style="text-align: right; font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem;" id="charCounter">0 / 500 characters</div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Online Portfolio / Resume URL <span style="font-weight:400; color:#64748b;">(Optional)</span></label>
-            <input type="url" id="resumeUrl" class="form-control" placeholder="https://pankajshinde.dev/resume.pdf" />
-            <span id="err_resumeUrl" class="field-error-msg"></span>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Cover Letter / Note to Hiring Manager</label>
-          <textarea id="coverLetter" class="form-control" rows="4" placeholder="Briefly highlight why your technical skills match this opening..."></textarea>
-          <div style="text-align: right; font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem;" id="charCounter">0 / 500 characters</div>
-        </div>
-
-        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1.05rem;">
-          🚀 Submit Application Now
-        </button>
-      </form>
+          <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1.05rem;">
+            🚀 Submit Application Now
+          </button>
+        </form>
+      </div>
     </div>
   </main>
 
@@ -381,17 +424,64 @@
       }
     });
 
-    // Auto-fill logged-in user info
-    document.addEventListener('DOMContentLoaded', () => {
+    // Setup role-aware view
+    async function initApplyView() {
       const user = getCurrentUser();
-      if (user) {
-        if (user.name) document.getElementById('name').value = user.name;
-        if (user.email) document.getElementById('email').value = user.email;
-      }
-    });
+      const guestNotice = document.getElementById('guestApplyNotice');
+      const recruiterNotice = document.getElementById('recruiterApplyNotice');
+      const recruiterTitle = document.getElementById('recruiterNoticeTitle');
+      const alreadyAppliedNotice = document.getElementById('alreadyAppliedNotice');
+      const candidateWrapper = document.getElementById('candidateFormWrapper');
+      const backBtn = document.getElementById('backBtn');
+      const guestLoginBtn = document.getElementById('guestLoginBtn');
 
-    // Load initial job detail
-    fetchJobDetail();
+      if (guestLoginBtn && jobId) {
+        guestLoginBtn.href = `login.html?redirect=job-detail.html?id=${jobId}`;
+      }
+
+      if (!user) {
+        // Guest user: show guest login prompt
+        guestNotice.style.display = 'block';
+        return;
+      }
+
+      // If recruiter or admin: they cannot apply
+      if (user.role === 'recruiter' || user.role === 'admin') {
+        recruiterNotice.style.display = 'block';
+        recruiterTitle.textContent = user.role === 'admin' ? 'Administrator View' : 'Recruiter View';
+        if (backBtn) {
+          backBtn.href = 'dashboard.html';
+          backBtn.textContent = '← Back to Dashboard';
+        }
+        return;
+      }
+
+      // Candidate user: check if already applied to this job
+      try {
+        const res = await fetchWithAuth(`/api/applications?jobId=${jobId}`);
+        if (res.ok) {
+          const apps = await res.json();
+          if (Array.isArray(apps) && apps.length > 0) {
+            alreadyAppliedNotice.style.display = 'block';
+            document.getElementById('alreadyAppliedStatusText').innerHTML =
+              `You have already applied for this opening. Current status: <strong>${apps[0].status || 'Pending'}</strong> (Submitted on ${apps[0].appliedAt || 'recently'}).`;
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not check existing application status:', err);
+      }
+
+      // Candidate user who has not applied yet: show application form
+      candidateWrapper.style.display = 'block';
+      if (user.name) document.getElementById('name').value = user.name;
+      if (user.email) document.getElementById('email').value = user.email;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initApplyView();
+      fetchJobDetail();
+    });
   </script>
   <script src="auth.js"></script>
 </body>

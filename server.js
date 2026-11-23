@@ -57,23 +57,27 @@ const isValidUrl = (urlStr) => {
 
 // ─── AUTHENTICATION ROUTES ───────────────────────────────────────────────────
 
-// 1. POST /api/auth/signup — Register User or Recruiter
+// 1. POST /api/auth/signup — Register Candidate (User) or Recruiter
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { name, email, password, role, company, adminCode } = req.body;
+    const { name, email, password, role, company } = req.body;
     const errors = {};
 
     if (!name || name.trim().length < 2) errors.name = 'Full name must be at least 2 characters.';
     if (!email || !isValidEmail(email)) errors.email = 'Please provide a valid email address.';
     if (!password || password.length < 6) errors.password = 'Password must be at least 6 characters.';
 
-    const selectedRole = role === 'recruiter' ? 'recruiter' : (role === 'admin' ? 'admin' : 'user');
+    if (role === 'admin') {
+      return res.status(400).json({
+        success: false,
+        error: 'Administrator accounts cannot be registered publicly.'
+      });
+    }
 
-    if (selectedRole === 'admin') {
-      const validAdminCode = process.env.ADMIN_SECRET || 'AdminSecret2026';
-      if (adminCode !== validAdminCode) {
-        errors.adminCode = 'Invalid Admin Passcode for admin registration.';
-      }
+    const selectedRole = role === 'recruiter' ? 'recruiter' : 'user';
+
+    if (selectedRole === 'recruiter' && (!company || company.trim().length < 2)) {
+      errors.company = 'Company name is required for recruiter registration.';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -365,15 +369,16 @@ app.delete('/api/jobs/:id', authenticate, authorize('recruiter', 'admin'), async
 
 // ─── CANDIDATE APPLICATIONS ROUTES ───────────────────────────────────────────
 
-// 9. POST /api/apply — Candidate submits application
-app.post('/api/apply', optionalAuth, async (req, res) => {
+// 9. POST /api/apply — Candidate submits application (Candidate/User role only)
+app.post('/api/apply', authenticate, authorize('user'), async (req, res) => {
   try {
     const { jobId, name, email, phone, experience, qualification, resumeUrl, coverLetter } = req.body;
     const errors = {};
 
     if (!jobId) errors.jobId = 'Target Job ID is required.';
     if (!name || name.trim().length < 3) errors.name = 'Full name must contain at least 3 characters.';
-    if (!email || !isValidEmail(email)) errors.email = 'Please provide a valid email address.';
+    const candidateEmail = (email && email.trim() !== '') ? email.trim().toLowerCase() : req.user.email.toLowerCase();
+    if (!candidateEmail || !isValidEmail(candidateEmail)) errors.email = 'Please provide a valid email address.';
     if (!phone || !isValidIndianPhone(phone)) errors.phone = 'Enter a valid 10-digit Indian phone number (starting 6-9).';
     if (!qualification || qualification.trim().length < 2) errors.qualification = 'Please select or enter your qualification.';
     if (resumeUrl && !isValidUrl(resumeUrl)) errors.resumeUrl = 'Resume URL must start with http:// or https://';
@@ -387,14 +392,30 @@ app.post('/api/apply', optionalAuth, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Job listing does not exist.' });
     }
 
+    // Check if candidate already applied to this job
+    const alreadyApplied = await Application.findOne({
+      jobId: String(jobId),
+      $or: [
+        { applicantId: req.user.userId },
+        { email: candidateEmail }
+      ]
+    });
+
+    if (alreadyApplied) {
+      return res.status(400).json({
+        success: false,
+        error: 'You have already submitted an application for this position. View status in My Applications.'
+      });
+    }
+
     const newApp = await Application.create({
       applicationId: 'app_' + Date.now(),
       jobId: String(jobId),
       jobTitle: targetJob.title,
       company: targetJob.company,
-      applicantId: req.user ? req.user.userId : null,
+      applicantId: req.user.userId,
       name: name.trim(),
-      email: email.trim().toLowerCase(),
+      email: candidateEmail,
       phone: phone.trim(),
       experience: experience ? String(experience).trim() : '0',
       qualification: qualification.trim(),

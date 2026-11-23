@@ -122,6 +122,19 @@
 
   <!-- Client-Side Controller -->
   <script>
+    // Recruiter and Admin roles do not browse candidate jobs; redirect to dashboard
+    (function checkRoleAccess() {
+      try {
+        const raw = localStorage.getItem('jobconnect_user');
+        if (raw) {
+          const user = JSON.parse(raw);
+          if (user && (user.role === 'recruiter' || user.role === 'admin')) {
+            window.location.replace('dashboard.html');
+          }
+        }
+      } catch {}
+    })();
+
     let activeCategory = '';
     let activeType = '';
     let activeLocation = '';

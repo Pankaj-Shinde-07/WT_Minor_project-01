@@ -206,11 +206,14 @@
         // Store JWT token and user info
         setAuth(data.token, data.user);
 
-        // Redirect based on role
-        if (data.user.role === 'recruiter') {
+        // Redirect based on role and redirect param
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get('redirect');
+
+        if (data.user.role === 'recruiter' || data.user.role === 'admin') {
           window.location.href = 'dashboard.html';
-        } else if (data.user.role === 'admin') {
-          window.location.href = 'dashboard.html';
+        } else if (redirectUrl) {
+          window.location.href = redirectUrl;
         } else {
           window.location.href = 'index.html';
         }

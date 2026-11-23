@@ -99,16 +99,30 @@ function setupNavAuth() {
 
   const roleBadge = `<span style="font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 9999px; text-transform: uppercase; ${roleColors[user.role] || ''}">${roleDisplayNames[user.role] || user.role}</span>`;
 
-  let linksHtml = `<a href="index.html" class="nav-link ${currentPage === 'index.html' ? 'active' : ''}">Browse Jobs</a>`;
+  // Update brand link so recruiters & admins go directly to dashboard
+  const brandLink = document.querySelector('.nav-brand');
+  if (brandLink && (user.role === 'recruiter' || user.role === 'admin')) {
+    brandLink.href = 'dashboard.html';
+  }
 
-  if (user.role === 'recruiter' || user.role === 'admin') {
+  let linksHtml = '';
+
+  if (user.role === 'recruiter') {
+    // Recruiter only needs Dashboard and Post Job
     linksHtml += `
-      <a href="dashboard.html" class="nav-link ${currentPage === 'dashboard.html' ? 'active' : ''}">${user.role === 'admin' ? 'Admin Hub' : 'Recruiter Pipeline'}</a>
-      <a href="post-job.html" class="btn btn-primary btn-sm">+ Post a Job</a>
+      <a href="dashboard.html" class="nav-link ${currentPage === 'dashboard.html' ? 'active' : ''}">Recruiter Dashboard</a>
+      <a href="post-job.html" class="btn btn-primary btn-sm ${currentPage === 'post-job.html' ? 'active' : ''}">+ Post a Job</a>
+    `;
+  } else if (user.role === 'admin') {
+    // Admin only needs Master Dashboard and Post Job
+    linksHtml += `
+      <a href="dashboard.html" class="nav-link ${currentPage === 'dashboard.html' ? 'active' : ''}">Admin Control Center</a>
+      <a href="post-job.html" class="btn btn-primary btn-sm ${currentPage === 'post-job.html' ? 'active' : ''}">+ Post a Job</a>
     `;
   } else {
-    // Regular Job Seeker / Candidate
+    // Candidate (User)
     linksHtml += `
+      <a href="index.html" class="nav-link ${currentPage === 'index.html' ? 'active' : ''}">Browse Jobs</a>
       <a href="dashboard.html" class="nav-link ${currentPage === 'dashboard.html' ? 'active' : ''}">My Applications</a>
     `;
   }

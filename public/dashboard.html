@@ -61,38 +61,38 @@
       </div>
       <div style="display: flex; gap: 0.75rem;">
         <button onclick="refreshAll()" class="btn btn-secondary btn-sm">↺ Refresh Data</button>
-        <a href="post-job.html" class="btn btn-primary btn-sm">+ Post New Opening</a>
+        <a href="post-job.html" class="btn btn-primary btn-sm" id="postJobHeaderBtn">+ Post New Opening</a>
       </div>
     </div>
 
     <!-- Metrics Cards -->
     <div class="dashboard-stats">
       <div class="stat-card">
-        <div class="stat-icon blue">💼</div>
+        <div class="stat-icon blue" id="statIcon1">💼</div>
         <div>
           <div class="stat-val" id="stat_totalJobs">0</div>
-          <div class="stat-label">Total Job Listings</div>
+          <div class="stat-label" id="statLabel1">Total Job Listings</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon purple">👥</div>
+        <div class="stat-icon purple" id="statIcon2">👥</div>
         <div>
           <div class="stat-val" id="stat_totalApps">0</div>
-          <div class="stat-label">Applications Received</div>
+          <div class="stat-label" id="statLabel2">Applications Received</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon amber">⏳</div>
+        <div class="stat-icon amber" id="statIcon3">⏳</div>
         <div>
           <div class="stat-val" id="stat_pending">0</div>
-          <div class="stat-label">Pending Review</div>
+          <div class="stat-label" id="statLabel3">Pending Review</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon green">🎯</div>
+        <div class="stat-icon green" id="statIcon4">🎯</div>
         <div>
           <div class="stat-val" id="stat_shortlisted">0</div>
-          <div class="stat-label">Shortlisted Candidates</div>
+          <div class="stat-label" id="statLabel4">Shortlisted Candidates</div>
         </div>
       </div>
     </div>
@@ -107,9 +107,6 @@
       </button>
       <button class="tab-btn" id="usersTabBtn" style="display: none;" onclick="switchTab('tabUsers', this)">
         User & Role Accounts (<span id="userCountLabel">0</span>)
-      </button>
-      <button class="tab-btn" onclick="switchTab('tabApi', this)">
-        System Architecture & REST Endpoints
       </button>
     </div>
 
@@ -196,31 +193,6 @@
         </table>
       </div>
     </section>
-
-    <!-- TAB 4: SYSTEM ARCHITECTURE & API INSPECTION -->
-    <section id="tabApi" style="display: none;">
-      <div class="card-box" style="margin-bottom: 1.5rem;">
-        <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.8rem; color: #0f172a;">Full-Stack Architecture Specification</h3>
-        <p style="color: #475569; margin-bottom: 1.2rem; font-size: 0.92rem;">
-          JobConnect is built as an individual Full-Stack application powered by a <strong>Node.js + Express REST API</strong> 
-          backend and a reactive client-side front-end communicating via asynchronous <code>fetch()</code> requests. 
-          Data is persistently serialized into a structured JSON file database (<code>db.json</code>).
-        </p>
-
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; font-family: monospace; font-size: 0.88rem; line-height: 1.8;">
-          <div style="font-weight: 700; color: #1e40af; margin-bottom: 0.5rem;">📋 Tested REST API Endpoints:</div>
-          <div><strong style="color: #059669;">GET</strong> &nbsp; /api/stats &mdash; Aggregate metrics for recruiter overview</div>
-          <div><strong style="color: #059669;">GET</strong> &nbsp; /api/jobs &mdash; Search and filter job listings (title, company, type, category)</div>
-          <div><strong style="color: #059669;">GET</strong> &nbsp; /api/jobs/:id &mdash; Retrieve single job posting details</div>
-          <div><strong style="color: #2563eb;">POST</strong> /api/jobs &mdash; Publish new job posting with payload validation</div>
-          <div><strong style="color: #dc2626;">DELETE</strong> /api/jobs/:id &mdash; Remove job posting and associated candidate applications</div>
-          <div><strong style="color: #2563eb;">POST</strong> /api/apply &mdash; Submit candidate application with regex validation</div>
-          <div><strong style="color: #059669;">GET</strong> &nbsp; /api/applications &mdash; Fetch candidate submissions list</div>
-          <div><strong style="color: #d97706;">PATCH</strong> /api/applications/:id/status &mdash; Update candidate pipeline stage (Shortlisted, Rejected, etc.)</div>
-          <div><strong style="color: #dc2626;">DELETE</strong> /api/applications/:id &mdash; Delete candidate submission</div>
-        </div>
-      </div>
-    </section>
   </main>
 
   <!-- Application Detail Modal -->
@@ -275,7 +247,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      ['tabApplications', 'tabJobs', 'tabUsers', 'tabApi'].forEach(id => {
+      ['tabApplications', 'tabJobs', 'tabUsers'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = (id === tabId) ? 'block' : 'none';
       });
@@ -283,13 +255,46 @@
 
     // Load Stats
     async function fetchStats() {
+      const user = getCurrentUser();
+      if (user && user.role === 'user') {
+        // Candidate: display candidate-specific application stats
+        document.getElementById('statIcon1').textContent = '📝';
+        document.getElementById('statLabel1').textContent = 'Applications Submitted';
+        document.getElementById('stat_totalJobs').textContent = allApplications.length;
+
+        document.getElementById('statIcon2').textContent = '🔍';
+        document.getElementById('statLabel2').textContent = 'Under Review';
+        document.getElementById('stat_totalApps').textContent = allApplications.filter(a => a.status === 'Under Review').length;
+
+        document.getElementById('statIcon3').textContent = '⏳';
+        document.getElementById('statLabel3').textContent = 'Pending Decisions';
+        document.getElementById('stat_pending').textContent = allApplications.filter(a => a.status === 'Pending').length;
+
+        document.getElementById('statIcon4').textContent = '🎯';
+        document.getElementById('statLabel4').textContent = 'Shortlisted / Offered';
+        document.getElementById('stat_shortlisted').textContent = allApplications.filter(a => a.status === 'Shortlisted' || a.status === 'Offered').length;
+        return;
+      }
+
+      // Recruiter / Admin: display platform & pipeline metrics
       try {
         const res = await fetch('/api/stats');
         if (res.ok) {
           const stats = await res.json();
+          document.getElementById('statIcon1').textContent = '💼';
+          document.getElementById('statLabel1').textContent = 'Total Job Listings';
           document.getElementById('stat_totalJobs').textContent = stats.totalJobs || 0;
+
+          document.getElementById('statIcon2').textContent = '👥';
+          document.getElementById('statLabel2').textContent = 'Applications Received';
           document.getElementById('stat_totalApps').textContent = stats.totalApplications || 0;
+
+          document.getElementById('statIcon3').textContent = '⏳';
+          document.getElementById('statLabel3').textContent = 'Pending Review';
           document.getElementById('stat_pending').textContent = stats.pendingCount || 0;
+
+          document.getElementById('statIcon4').textContent = '🎯';
+          document.getElementById('statLabel4').textContent = 'Shortlisted Candidates';
           document.getElementById('stat_shortlisted').textContent = stats.shortlistedCount || 0;
         }
       } catch (err) {
@@ -611,18 +616,26 @@
       const titleEl = document.querySelector('.page-title');
       const subtitleEl = document.querySelector('.page-subtitle');
       const appsTabBtn = document.getElementById('appsTabBtn');
+      const jobsTabBtn = document.getElementById('jobsTabBtn');
       const usersTabBtn = document.getElementById('usersTabBtn');
+      const postJobHeaderBtn = document.getElementById('postJobHeaderBtn');
 
       if (user.role === 'user') {
         titleEl.textContent = 'Candidate Application Tracking';
         subtitleEl.textContent = 'View your active job applications, recruiter review status, and submissions.';
         appsTabBtn.childNodes[0].nodeValue = 'My Applications ';
+        if (jobsTabBtn) jobsTabBtn.style.display = 'none';
+        if (postJobHeaderBtn) postJobHeaderBtn.style.display = 'none';
       } else if (user.role === 'recruiter') {
         titleEl.textContent = 'Recruiter Hiring Pipeline';
         subtitleEl.textContent = `Review candidates for ${user.company || 'your postings'}, change application stages, and publish openings.`;
+        if (jobsTabBtn) jobsTabBtn.style.display = 'inline-block';
+        if (postJobHeaderBtn) postJobHeaderBtn.style.display = 'inline-block';
       } else if (user.role === 'admin') {
         titleEl.textContent = 'Administrator Operations Control Center';
         subtitleEl.textContent = 'Master administration: full access to open jobs, candidate pipelines, and user accounts.';
+        if (jobsTabBtn) jobsTabBtn.style.display = 'inline-block';
+        if (postJobHeaderBtn) postJobHeaderBtn.style.display = 'inline-block';
         if (usersTabBtn) usersTabBtn.style.display = 'inline-block';
       }
 

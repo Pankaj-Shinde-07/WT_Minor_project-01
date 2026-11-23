@@ -38,16 +38,16 @@
     }
     .role-selector {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.5rem;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.65rem;
       margin-bottom: 1.5rem;
     }
     .role-btn {
-      padding: 0.65rem 0.5rem;
+      padding: 0.75rem 0.6rem;
       background: var(--gray-50);
       border: 1.5px solid var(--gray-200);
       border-radius: var(--radius-md);
-      font-size: 0.84rem;
+      font-size: 0.88rem;
       font-weight: 600;
       color: var(--gray-700);
       cursor: pointer;
@@ -56,10 +56,10 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.2rem;
+      gap: 0.25rem;
     }
     .role-btn span.icon {
-      font-size: 1.15rem;
+      font-size: 1.25rem;
     }
     .role-btn.active {
       border-color: var(--primary);
@@ -88,23 +88,19 @@
     <div class="auth-card">
       <div class="auth-header">
         <h1>Create an Account</h1>
-        <p>Join as a candidate, hiring recruiter, or administrator</p>
+        <p>Join as a job seeking candidate or hiring recruiter</p>
       </div>
 
-      <!-- Role Selector -->
-      <label class="form-label" style="margin-bottom: 0.4rem;">Select Your Role</label>
+      <!-- Role Selector (Candidate vs Recruiter only) -->
+      <label class="form-label" style="margin-bottom: 0.4rem;">Select Your Account Type</label>
       <div class="role-selector">
         <button type="button" class="role-btn active" data-role="user" onclick="selectRole('user')">
           <span class="icon">👤</span>
-          <span>Candidate</span>
+          <span>Candidate (Job Seeker)</span>
         </button>
         <button type="button" class="role-btn" data-role="recruiter" onclick="selectRole('recruiter')">
           <span class="icon">💼</span>
-          <span>Recruiter</span>
-        </button>
-        <button type="button" class="role-btn" data-role="admin" onclick="selectRole('admin')">
-          <span class="icon">⚙️</span>
-          <span>Admin</span>
+          <span>Recruiter (Employer)</span>
         </button>
       </div>
 
@@ -154,7 +150,7 @@
 
         <!-- Conditional Company Field for Recruiters -->
         <div class="form-group" id="companyGroup" style="display: none;">
-          <label class="form-label" for="signupCompany">Company / Organization Name</label>
+          <label class="form-label" for="signupCompany">Company / Organization Name <span style="color:var(--danger)">*</span></label>
           <input
             type="text"
             id="signupCompany"
@@ -162,19 +158,6 @@
             placeholder="e.g. Google Cloud, TechNova"
           />
           <div class="field-error" id="companyError"></div>
-        </div>
-
-        <!-- Conditional Admin Code for Admin -->
-        <div class="form-group" id="adminCodeGroup" style="display: none;">
-          <label class="form-label" for="adminCode">Admin Passcode</label>
-          <input
-            type="password"
-            id="adminCode"
-            class="form-control"
-            placeholder="Enter system admin passcode"
-          />
-          <small style="color: var(--gray-500); font-size: 0.76rem;">Default master passcode: AdminSecret2026</small>
-          <div class="field-error" id="adminCodeError"></div>
         </div>
 
         <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem; justify-content: center; padding: 0.75rem;">
@@ -197,10 +180,7 @@
       });
 
       const companyGroup = document.getElementById('companyGroup');
-      const adminCodeGroup = document.getElementById('adminCodeGroup');
-
       companyGroup.style.display = role === 'recruiter' ? 'block' : 'none';
-      adminCodeGroup.style.display = role === 'admin' ? 'block' : 'none';
     }
 
     function clearErrors() {
@@ -218,7 +198,6 @@
       const password = document.getElementById('signupPassword').value;
       const role = document.getElementById('selectedRoleInput').value;
       const company = document.getElementById('signupCompany').value.trim();
-      const adminCode = document.getElementById('adminCode').value.trim();
       const submitBtn = document.getElementById('submitBtn');
       const alertBox = document.getElementById('authAlert');
 
@@ -239,10 +218,6 @@
         document.getElementById('companyError').textContent = 'Please specify your company or organization.';
         hasError = true;
       }
-      if (role === 'admin' && !adminCode) {
-        document.getElementById('adminCodeError').textContent = 'Admin passcode is required.';
-        hasError = true;
-      }
       if (hasError) return;
 
       submitBtn.disabled = true;
@@ -252,7 +227,7 @@
         const res = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password, role, company, adminCode })
+          body: JSON.stringify({ name, email, password, role, company })
         });
 
         const data = await res.json();
@@ -271,8 +246,6 @@
 
         // Redirect based on role
         if (data.user.role === 'recruiter') {
-          window.location.href = 'dashboard.html';
-        } else if (data.user.role === 'admin') {
           window.location.href = 'dashboard.html';
         } else {
           window.location.href = 'index.html';
