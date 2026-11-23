@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Log In — JobConnect</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .auth-container {
+      max-width: 440px;
+      margin: 3.5rem auto;
+      padding: 0 1.25rem;
+      width: 100%;
+    }
+    .auth-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem;
+      box-shadow: var(--shadow-md);
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .auth-header h1 {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 0.4rem;
+    }
+    .auth-header p {
+      color: var(--gray-500);
+      font-size: 0.92rem;
+    }
+    .demo-accounts {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px dashed var(--gray-300);
+    }
+    .demo-accounts p {
+      font-size: 0.78rem;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.6rem;
+      text-align: center;
+    }
+    .demo-chips {
+      display: flex;
+      gap: 0.45rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .demo-chip {
+      background: var(--gray-100);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-full);
+      padding: 0.35rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .demo-chip:hover {
+      background: var(--primary-light);
+      color: var(--primary-text);
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <div class="brand-icon">💼</div>
+      <span>JobConnect</span>
+      <span class="brand-badge">Full-Stack</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Browse Jobs</a>
+      <a href="signup.html" class="btn btn-outline btn-sm">Sign Up</a>
+    </div>
+  </nav>
+
+  <!-- Login Form -->
+  <main class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>Welcome Back</h1>
+        <p>Sign in to access your jobs, applications, and portal dashboard</p>
+      </div>
+
+      <div id="authAlert" class="alert-box" style="display: none; margin-bottom: 1.25rem;"></div>
+
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email Address</label>
+          <input
+            type="email"
+            id="loginEmail"
+            class="form-control"
+            placeholder="e.g. user@example.com"
+            required
+            autocomplete="email"
+          />
+          <div class="field-error" id="emailError"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input
+            type="password"
+            id="loginPassword"
+            class="form-control"
+            placeholder="••••••••"
+            required
+            autocomplete="current-password"
+          />
+          <div class="field-error" id="passwordError"></div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem; justify-content: center; padding: 0.75rem;">
+          Sign In
+        </button>
+      </form>
+
+      <!-- Quick Demo Login Helpers -->
+      <div class="demo-accounts">
+        <p>Quick Demo Sign-In</p>
+        <div class="demo-chips">
+          <button type="button" class="demo-chip" onclick="fillDemo('admin@jobconnect.com', 'Admin@12345')">👑 Admin</button>
+          <button type="button" class="demo-chip" onclick="fillDemo('recruiter@demo.com', 'Password@123')">💼 Recruiter</button>
+          <button type="button" class="demo-chip" onclick="fillDemo('candidate@demo.com', 'Password@123')">👤 Candidate</button>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 1.5rem; font-size: 0.88rem; color: var(--gray-600);">
+        Don't have an account? <a href="signup.html" style="color: var(--primary); font-weight: 600; text-decoration: none;">Sign Up</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="auth.js"></script>
+  <script>
+    function fillDemo(email, password) {
+      document.getElementById('loginEmail').value = email;
+      document.getElementById('loginPassword').value = password;
+      clearErrors();
+    }
+
+    function clearErrors() {
+      document.getElementById('emailError').textContent = '';
+      document.getElementById('passwordError').textContent = '';
+      const alert = document.getElementById('authAlert');
+      alert.style.display = 'none';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearErrors();
+
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const submitBtn = document.getElementById('submitBtn');
+      const alertBox = document.getElementById('authAlert');
+
+      let hasError = false;
+      if (!email) {
+        document.getElementById('emailError').textContent = 'Please enter your email.';
+        hasError = true;
+      }
+      if (!password) {
+        document.getElementById('passwordError').textContent = 'Please enter your password.';
+        hasError = true;
+      }
+      if (hasError) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing In...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          alertBox.className = 'alert-box alert-danger';
+          alertBox.style.display = 'block';
+          alertBox.textContent = data.error || 'Login failed. Please check your credentials.';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In';
+          return;
+        }
+
+        // Store JWT token and user info
+        setAuth(data.token, data.user);
+
+        // Redirect based on role
+        if (data.user.role === 'recruiter') {
+          window.location.href = 'dashboard.html';
+        } else if (data.user.role === 'admin') {
+          window.location.href = 'dashboard.html';
+        } else {
+          window.location.href = 'index.html';
+        }
+      } catch (err) {
+        alertBox.className = 'alert-box alert-danger';
+        alertBox.style.display = 'block';
+        alertBox.textContent = 'Network or server error. Please try again.';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>

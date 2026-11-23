@@ -15,11 +15,16 @@
     "rest-api",
     "moodle"
   ],
-  "author": "Pankaj Shinde (PRN: 202401100005)",
+  "author": "Team Niyati",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
-    "express": "^5.2.1"
+    "dotenv": "^18.0.10",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.12.3",
+    "mysql2": "^3.24.6"
   }
 }

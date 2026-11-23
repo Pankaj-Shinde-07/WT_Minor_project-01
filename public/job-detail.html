@@ -356,9 +356,8 @@
       };
 
       try {
-        const res = await fetch('/api/apply', {
+        const res = await fetchWithAuth('/api/apply', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
@@ -382,8 +381,18 @@
       }
     });
 
+    // Auto-fill logged-in user info
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = getCurrentUser();
+      if (user) {
+        if (user.name) document.getElementById('name').value = user.name;
+        if (user.email) document.getElementById('email').value = user.email;
+      }
+    });
+
     // Load initial job detail
     fetchJobDetail();
   </script>
+  <script src="auth.js"></script>
 </body>
 </html>

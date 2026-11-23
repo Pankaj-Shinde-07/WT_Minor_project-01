@@ -3,8 +3,6 @@
 
 > **Institution:** MIT Academy of Engineering, Alandi, Pune  
 > **Department:** Department of Software Engineering  
-> **Student Name:** Pankaj Shinde  
-> **PRN:** 202401100005  
 > **Branch & Division:** Software Engineering (Division A)  
 > **Academic Year:** 2026–2027  
 
@@ -26,27 +24,31 @@ In the contemporary technology employment ecosystem, candidates struggle with op
 | Layer | Technologies Used | Role & Functionality |
 | :--- | :--- | :--- |
 | **Front-End Client** | HTML5, CSS3, JavaScript (ES6+), Inter Google Font | Semantic DOM layout, responsive CSS custom property tokens, asynchronous `fetch()` API calls, and real-time input event listeners. |
-| **Back-End Server** | Node.js, Express.js (v5), CORS, JSON Parser | High-performance asynchronous REST API routing, request validation middleware, HTTP status codes (`200`, `201`, `400`, `404`, `500`), and static file serving. |
-| **Persistent Storage** | File-backed JSON Database (`db.json`) | Persistent schema-based collections for `jobs` and `applications`; new local databases are initialized from `db.example.json`. |
-| **Development & Testing** | Git, GitHub, REST client, VS Code | Modular codebase version control, automated browser UI testing, and live API verification. |
+| **Back-End Server** | Node.js, Express.js (v5), CORS, JWT, bcryptjs | High-performance asynchronous REST API routing, request validation middleware, role-based authorization guards, and Vercel Serverless Function entry. |
+| **Cloud Database** | MongoDB Atlas / Mongoose ODM | Cloud-hosted document database for `users`, `jobs`, and `applications`, with automated indexes and connection pooling. |
+| **Authentication & Roles** | JWT, bcryptjs, LocalStorage | 3 distinct role profiles: **User (Candidate)**, **Recruiter**, and **Administrator**. |
+| **Deployment** | Vercel Serverless & GitHub | Automatic continuous deployment via Vercel `@vercel/node` builder. |
 
 ### Architectural Flow Diagram
 ```
 [ Web Browser Client ]
    ├── index.html       (Search & Browse Job Board)
-   ├── job-detail.html  (Job Specs & Client-Validated Application Form)
+   ├── job-detail.html  (Job Specs & Application Form)
    ├── post-job.html    (Recruiter Job Publishing Form)
-   └── dashboard.html   (Recruiter Pipeline & Application Lifecycle)
+   ├── dashboard.html   (Role-Aware Pipeline & Lifecycle Hub)
+   ├── login.html       (Email/Password Sign-In & Quick Demos)
+   └── signup.html      (Candidate, Recruiter, Admin Registration)
             │
-            ▼ Asynchronous JSON HTTP Requests (fetch)
-[ Express.js REST API Server (Port 3000) ]
-   ├── Validation Middleware (Email regex, Phone regex, Schema bounds)
-   ├── Route Handlers (/api/jobs, /api/apply, /api/stats, /api/applications)
-   └── Response Serialization & Error Handling
+            ▼ Asynchronous JSON HTTP Requests (fetch with JWT Bearer)
+[ Express.js REST API Server on Vercel Serverless ]
+   ├── Auth Middleware (JWT Token Verification & Role RBAC)
+   ├── Route Handlers (/api/auth, /api/jobs, /api/apply, /api/stats, /api/applications, /api/admin)
+   └── Mongoose Connection Pool Cache
             │
-            ▼ File System I/O
-[ Persistent JSON Storage (db.json) ]
-   ├── jobs[] (Job listings, requirements, tags, compensation)
+            ▼ Cloud Network Connection
+[ MongoDB Atlas Database (jobconnect) ]
+   ├── users[]        (Hashed passwords, roles: user | recruiter | admin)
+   ├── jobs[]         (Job listings, requirements, tags, compensation)
    └── applications[] (Candidate profiles, contact, cover letters, pipeline status)
 ```
 

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up — JobConnect</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .auth-container {
+      max-width: 480px;
+      margin: 3rem auto;
+      padding: 0 1.25rem;
+      width: 100%;
+    }
+    .auth-card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem;
+      box-shadow: var(--shadow-md);
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+    .auth-header h1 {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 0.35rem;
+    }
+    .auth-header p {
+      color: var(--gray-500);
+      font-size: 0.92rem;
+    }
+    .role-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .role-btn {
+      padding: 0.65rem 0.5rem;
+      background: var(--gray-50);
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+    }
+    .role-btn span.icon {
+      font-size: 1.15rem;
+    }
+    .role-btn.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary-text);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <div class="brand-icon">💼</div>
+      <span>JobConnect</span>
+      <span class="brand-badge">Full-Stack</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Browse Jobs</a>
+      <a href="login.html" class="btn btn-outline btn-sm">Log In</a>
+    </div>
+  </nav>
+
+  <!-- Signup Form -->
+  <main class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>Create an Account</h1>
+        <p>Join as a candidate, hiring recruiter, or administrator</p>
+      </div>
+
+      <!-- Role Selector -->
+      <label class="form-label" style="margin-bottom: 0.4rem;">Select Your Role</label>
+      <div class="role-selector">
+        <button type="button" class="role-btn active" data-role="user" onclick="selectRole('user')">
+          <span class="icon">👤</span>
+          <span>Candidate</span>
+        </button>
+        <button type="button" class="role-btn" data-role="recruiter" onclick="selectRole('recruiter')">
+          <span class="icon">💼</span>
+          <span>Recruiter</span>
+        </button>
+        <button type="button" class="role-btn" data-role="admin" onclick="selectRole('admin')">
+          <span class="icon">⚙️</span>
+          <span>Admin</span>
+        </button>
+      </div>
+
+      <div id="authAlert" class="alert-box" style="display: none; margin-bottom: 1.25rem;"></div>
+
+      <form id="signupForm" novalidate>
+        <input type="hidden" id="selectedRoleInput" value="user" />
+
+        <div class="form-group">
+          <label class="form-label" for="signupName">Full Name</label>
+          <input
+            type="text"
+            id="signupName"
+            class="form-control"
+            placeholder="e.g. Pankaj Shinde"
+            required
+            autocomplete="name"
+          />
+          <div class="field-error" id="nameError"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signupEmail">Email Address</label>
+          <input
+            type="email"
+            id="signupEmail"
+            class="form-control"
+            placeholder="e.g. user@example.com"
+            required
+            autocomplete="email"
+          />
+          <div class="field-error" id="emailError"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signupPassword">Password</label>
+          <input
+            type="password"
+            id="signupPassword"
+            class="form-control"
+            placeholder="At least 6 characters"
+            required
+            autocomplete="new-password"
+          />
+          <div class="field-error" id="passwordError"></div>
+        </div>
+
+        <!-- Conditional Company Field for Recruiters -->
+        <div class="form-group" id="companyGroup" style="display: none;">
+          <label class="form-label" for="signupCompany">Company / Organization Name</label>
+          <input
+            type="text"
+            id="signupCompany"
+            class="form-control"
+            placeholder="e.g. Google Cloud, TechNova"
+          />
+          <div class="field-error" id="companyError"></div>
+        </div>
+
+        <!-- Conditional Admin Code for Admin -->
+        <div class="form-group" id="adminCodeGroup" style="display: none;">
+          <label class="form-label" for="adminCode">Admin Passcode</label>
+          <input
+            type="password"
+            id="adminCode"
+            class="form-control"
+            placeholder="Enter system admin passcode"
+          />
+          <small style="color: var(--gray-500); font-size: 0.76rem;">Default master passcode: AdminSecret2026</small>
+          <div class="field-error" id="adminCodeError"></div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem; justify-content: center; padding: 0.75rem;">
+          Create Account
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 1.5rem; font-size: 0.88rem; color: var(--gray-600);">
+        Already have an account? <a href="login.html" style="color: var(--primary); font-weight: 600; text-decoration: none;">Sign In</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="auth.js"></script>
+  <script>
+    function selectRole(role) {
+      document.getElementById('selectedRoleInput').value = role;
+      document.querySelectorAll('.role-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-role') === role);
+      });
+
+      const companyGroup = document.getElementById('companyGroup');
+      const adminCodeGroup = document.getElementById('adminCodeGroup');
+
+      companyGroup.style.display = role === 'recruiter' ? 'block' : 'none';
+      adminCodeGroup.style.display = role === 'admin' ? 'block' : 'none';
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.field-error').forEach(el => el.textContent = '');
+      const alert = document.getElementById('authAlert');
+      alert.style.display = 'none';
+    }
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearErrors();
+
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      const role = document.getElementById('selectedRoleInput').value;
+      const company = document.getElementById('signupCompany').value.trim();
+      const adminCode = document.getElementById('adminCode').value.trim();
+      const submitBtn = document.getElementById('submitBtn');
+      const alertBox = document.getElementById('authAlert');
+
+      let hasError = false;
+      if (!name || name.length < 2) {
+        document.getElementById('nameError').textContent = 'Name must be at least 2 characters.';
+        hasError = true;
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        document.getElementById('emailError').textContent = 'Please enter a valid email address.';
+        hasError = true;
+      }
+      if (!password || password.length < 6) {
+        document.getElementById('passwordError').textContent = 'Password must be at least 6 characters.';
+        hasError = true;
+      }
+      if (role === 'recruiter' && !company) {
+        document.getElementById('companyError').textContent = 'Please specify your company or organization.';
+        hasError = true;
+      }
+      if (role === 'admin' && !adminCode) {
+        document.getElementById('adminCodeError').textContent = 'Admin passcode is required.';
+        hasError = true;
+      }
+      if (hasError) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating Account...';
+
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, role, company, adminCode })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          alertBox.className = 'alert-box alert-danger';
+          alertBox.style.display = 'block';
+          alertBox.textContent = data.error || (data.errors ? Object.values(data.errors).join(' ') : 'Registration failed.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Account';
+          return;
+        }
+
+        // Store JWT token and user info
+        setAuth(data.token, data.user);
+
+        // Redirect based on role
+        if (data.user.role === 'recruiter') {
+          window.location.href = 'dashboard.html';
+        } else if (data.user.role === 'admin') {
+          window.location.href = 'dashboard.html';
+        } else {
+          window.location.href = 'index.html';
+        }
+      } catch (err) {
+        alertBox.className = 'alert-box alert-danger';
+        alertBox.style.display = 'block';
+        alertBox.textContent = 'Network or server error. Please try again.';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+      }
+    });
+  </script>
+</body>
+</html>

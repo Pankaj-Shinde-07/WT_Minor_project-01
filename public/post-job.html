@@ -267,9 +267,8 @@
       };
 
       try {
-        const res = await fetch('/api/jobs', {
+        const res = await fetchWithAuth('/api/jobs', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
@@ -281,7 +280,7 @@
           showToast('✅ Job posting published live!');
           document.getElementById('successBanner').scrollIntoView({ behavior: 'smooth' });
         } else {
-          showToast(`❌ Error: ${data.errors ? JSON.stringify(data.errors) : 'Failed to publish'}`);
+          showToast(`❌ Error: ${data.errors ? JSON.stringify(data.errors) : (data.error || 'Failed to publish')}`);
           publishBtn.disabled = false;
           publishBtn.textContent = '🚀 Publish Job Opening to Portal';
         }
@@ -292,6 +291,25 @@
         publishBtn.textContent = '🚀 Publish Job Opening to Portal';
       }
     });
+
+    // Role protection on post-job page
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = getCurrentUser();
+      if (!user) {
+        alert('Authentication required: Please sign in as a Recruiter or Admin to post job openings.');
+        window.location.href = 'login.html';
+        return;
+      }
+      if (user.role !== 'recruiter' && user.role !== 'admin') {
+        alert('Access denied: Candidate accounts cannot post jobs. Please register as a Recruiter.');
+        window.location.href = 'index.html';
+        return;
+      }
+      if (user.company && !document.getElementById('company').value) {
+        document.getElementById('company').value = user.company;
+      }
+    });
   </script>
+  <script src="auth.js"></script>
 </body>
 </html>

@@ -99,11 +99,14 @@
 
     <!-- Navigation Tabs -->
     <div class="tab-nav">
-      <button class="tab-btn active" onclick="switchTab('tabApplications', this)">
+      <button class="tab-btn active" id="appsTabBtn" onclick="switchTab('tabApplications', this)">
         Candidate Applications (<span id="appCountLabel">0</span>)
       </button>
-      <button class="tab-btn" onclick="switchTab('tabJobs', this)">
+      <button class="tab-btn" id="jobsTabBtn" onclick="switchTab('tabJobs', this)">
         Manage Job Postings (<span id="jobCountLabel">0</span>)
+      </button>
+      <button class="tab-btn" id="usersTabBtn" style="display: none;" onclick="switchTab('tabUsers', this)">
+        User & Role Accounts (<span id="userCountLabel">0</span>)
       </button>
       <button class="tab-btn" onclick="switchTab('tabApi', this)">
         System Architecture & REST Endpoints
@@ -169,7 +172,32 @@
       </div>
     </section>
 
-    <!-- TAB 3: SYSTEM ARCHITECTURE & API INSPECTION -->
+    <!-- TAB 3: USER MANAGEMENT (Admin Only) -->
+    <section id="tabUsers" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">Registered User & Recruiter Accounts</h3>
+        <button onclick="loadUsers()" class="btn btn-secondary btn-sm">↺ Refresh Users</button>
+      </div>
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Full Name</th>
+              <th>Email Address</th>
+              <th>Role</th>
+              <th>Organization</th>
+              <th>Registration Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="6" style="text-align: center; padding: 2rem; color: #94a3b8;">Loading user accounts...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 4: SYSTEM ARCHITECTURE & API INSPECTION -->
     <section id="tabApi" style="display: none;">
       <div class="card-box" style="margin-bottom: 1.5rem;">
         <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.8rem; color: #0f172a;">Full-Stack Architecture Specification</h3>
@@ -247,8 +275,9 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      ['tabApplications', 'tabJobs', 'tabApi'].forEach(id => {
-        document.getElementById(id).style.display = (id === tabId) ? 'block' : 'none';
+      ['tabApplications', 'tabJobs', 'tabUsers', 'tabApi'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = (id === tabId) ? 'block' : 'none';
       });
     }
 
@@ -271,7 +300,13 @@
     // Load Applications
     async function loadApplications() {
       try {
-        const res = await fetch('/api/applications');
+        const res = await fetchWithAuth('/api/applications');
+        if (!res.ok) {
+          if (res.status === 401) {
+            window.location.href = 'login.html';
+            return;
+          }
+        }
         allApplications = await res.json();
         document.getElementById('appCountLabel').textContent = allApplications.length;
         renderApplicationsTable(allApplications);
@@ -282,13 +317,49 @@
 
     function renderApplicationsTable(apps) {
       const tbody = document.getElementById('applicationsTableBody');
+      const user = getCurrentUser();
+      const isCandidate = user && user.role === 'user';
+
       if (!apps || apps.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 3rem; color: #94a3b8;">No applications submitted yet.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 3rem; color: #94a3b8;">${isCandidate ? 'You have not submitted any job applications yet.' : 'No candidate applications submitted yet.'}</td></tr>`;
         return;
       }
 
       tbody.innerHTML = apps.map(app => {
-        const cleanStatus = (app.status || 'Pending').replace(/\s+/g, '');
+        const statusColors = {
+          'Pending': 'background: #fffbeb; color: #b45309; border: 1px solid #fde68a;',
+          'Under Review': 'background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;',
+          'Shortlisted': 'background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;',
+          'Rejected': 'background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;',
+          'Offered': 'background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe;'
+        };
+
+        let statusControl = '';
+        if (isCandidate) {
+          // Read-only badge for candidate
+          statusControl = `<span style="display: inline-block; padding: 0.3rem 0.65rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 700; ${statusColors[app.status] || ''}">${app.status || 'Pending'}</span>`;
+        } else {
+          // Select dropdown for Recruiter & Admin
+          statusControl = `
+            <select onchange="updateAppStatus('${app.id}', this.value)" class="form-control" style="padding: 0.35rem 0.65rem; font-size: 0.82rem; width: 140px; border-radius: 20px; font-weight: 600;">
+              <option value="Pending" ${app.status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
+              <option value="Under Review" ${app.status === 'Under Review' ? 'selected' : ''}>🔍 Under Review</option>
+              <option value="Shortlisted" ${app.status === 'Shortlisted' ? 'selected' : ''}>🎯 Shortlisted</option>
+              <option value="Rejected" ${app.status === 'Rejected' ? 'selected' : ''}>❌ Rejected</option>
+              <option value="Offered" ${app.status === 'Offered' ? 'selected' : ''}>🎉 Offered</option>
+            </select>
+          `;
+        }
+
+        let actionButtons = `
+          <button onclick="viewAppModal('${app.id}')" class="btn btn-secondary btn-sm" title="View Details">👁️</button>
+        `;
+        if (!isCandidate) {
+          actionButtons += `
+            <button onclick="deleteApplication('${app.id}')" class="btn btn-danger btn-sm" title="Delete Application">🗑️</button>
+          `;
+        }
+
         return `
           <tr>
             <td>
@@ -307,19 +378,10 @@
               <div>${app.email}</div>
               <div style="font-size: 0.82rem; color: #64748b;">📞 ${app.phone}</div>
             </td>
-            <td>
-              <select onchange="updateAppStatus('${app.id}', this.value)" class="form-control" style="padding: 0.35rem 0.65rem; font-size: 0.82rem; width: 140px; border-radius: 20px; font-weight: 600;">
-                <option value="Pending" ${app.status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
-                <option value="Under Review" ${app.status === 'Under Review' ? 'selected' : ''}>🔍 Under Review</option>
-                <option value="Shortlisted" ${app.status === 'Shortlisted' ? 'selected' : ''}>🎯 Shortlisted</option>
-                <option value="Rejected" ${app.status === 'Rejected' ? 'selected' : ''}>❌ Rejected</option>
-                <option value="Offered" ${app.status === 'Offered' ? 'selected' : ''}>🎉 Offered</option>
-              </select>
-            </td>
+            <td>${statusControl}</td>
             <td>
               <div style="display: flex; gap: 0.4rem;">
-                <button onclick="viewAppModal('${app.id}')" class="btn btn-secondary btn-sm" title="View Details">👁️</button>
-                <button onclick="deleteApplication('${app.id}')" class="btn btn-danger btn-sm" title="Delete Application">🗑️</button>
+                ${actionButtons}
               </div>
             </td>
           </tr>
@@ -348,9 +410,8 @@
     // Update Status
     async function updateAppStatus(id, newStatus) {
       try {
-        const res = await fetch(`/api/applications/${id}/status`, {
+        const res = await fetchWithAuth(`/api/applications/${id}/status`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: newStatus })
         });
         const data = await res.json();
@@ -358,7 +419,7 @@
           showToast(`✅ Status changed to ${newStatus}`);
           fetchStats();
         } else {
-          showToast('❌ Failed to update status');
+          showToast(`❌ Error: ${data.error || 'Failed to update status'}`);
         }
       } catch (err) {
         console.error('Status update error:', err);
@@ -369,7 +430,7 @@
     async function deleteApplication(id) {
       if (!confirm('Are you sure you want to delete this application record?')) return;
       try {
-        const res = await fetch(`/api/applications/${id}`, { method: 'DELETE' });
+        const res = await fetchWithAuth(`/api/applications/${id}`, { method: 'DELETE' });
         if (res.ok) {
           showToast('🗑️ Application record removed');
           loadApplications();
@@ -394,41 +455,109 @@
 
     function renderJobsTable(jobs) {
       const tbody = document.getElementById('jobsTableBody');
+      const user = getCurrentUser();
+      const isCandidate = user && user.role === 'user';
+
       if (!jobs || jobs.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">No jobs posted yet.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = jobs.map(job => `
-        <tr>
-          <td>
-            <a href="job-detail.html?id=${job.id}" style="font-weight: 700; color: #0f172a; text-decoration:none;">${job.title}</a>
-          </td>
-          <td><strong>${job.company}</strong></td>
-          <td>${job.location}</td>
-          <td><span class="badge-tag badge-fulltime">${job.type}</span></td>
-          <td>${job.salary}</td>
-          <td style="color:#64748b;">${job.postedAt}</td>
-          <td>
-            <div style="display:flex; gap:0.4rem;">
-              <a href="job-detail.html?id=${job.id}" class="btn btn-secondary btn-sm" title="View Details">👁️</a>
-              <button onclick="deleteJob('${job.id}')" class="btn btn-danger btn-sm" title="Delete Job">🗑️</button>
-            </div>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = jobs.map(job => {
+        let actionButtons = `
+          <a href="job-detail.html?id=${job.id}" class="btn btn-secondary btn-sm" title="View Details">👁️</a>
+        `;
+        if (!isCandidate) {
+          actionButtons += `
+            <button onclick="deleteJob('${job.id}')" class="btn btn-danger btn-sm" title="Delete Job">🗑️</button>
+          `;
+        }
+
+        return `
+          <tr>
+            <td>
+              <a href="job-detail.html?id=${job.id}" style="font-weight: 700; color: #0f172a; text-decoration:none;">${job.title}</a>
+            </td>
+            <td><strong>${job.company}</strong></td>
+            <td>${job.location}</td>
+            <td><span class="badge-tag badge-fulltime">${job.type}</span></td>
+            <td>${job.salary}</td>
+            <td style="color:#64748b;">${job.postedAt}</td>
+            <td>
+              <div style="display:flex; gap:0.4rem;">
+                ${actionButtons}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     async function deleteJob(id) {
       if (!confirm('Are you sure you want to remove this job posting? (Associated applications will also be deleted)')) return;
       try {
-        const res = await fetch(`/api/jobs/${id}`, { method: 'DELETE' });
-        if (res.ok) {
+        const res = await fetchWithAuth(`/api/jobs/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
           showToast('🗑️ Job posting removed');
           refreshAll();
+        } else {
+          showToast(`❌ Error: ${data.error || 'Failed to delete'}`);
         }
       } catch (err) {
         console.error('Delete job error:', err);
+      }
+    }
+
+    // Admin: Load Registered Users
+    async function loadUsers() {
+      try {
+        const res = await fetchWithAuth('/api/admin/users');
+        if (!res.ok) return;
+        const data = await res.json();
+        const users = data.users || [];
+        document.getElementById('userCountLabel').textContent = users.length;
+
+        const tbody = document.getElementById('usersTableBody');
+        if (users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #94a3b8;">No registered users found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = users.map(u => `
+          <tr>
+            <td><strong>${u.name}</strong></td>
+            <td>${u.email}</td>
+            <td>
+              <span style="font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 9999px; text-transform: uppercase; ${u.role === 'admin' ? 'background: #fef2f2; color: #b91c1c;' : (u.role === 'recruiter' ? 'background: #ecfdf5; color: #047857;' : 'background: #eef2ff; color: #4338ca;')}">
+                ${u.role}
+              </span>
+            </td>
+            <td>${u.company || '—'}</td>
+            <td style="color: #64748b; font-size: 0.85rem;">${new Date(u.createdAt).toLocaleDateString()}</td>
+            <td>
+              <button onclick="deleteUserAccount('${u._id}')" class="btn btn-danger btn-sm" title="Delete Account">🗑️</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Users load error:', err);
+      }
+    }
+
+    async function deleteUserAccount(id) {
+      if (!confirm('Are you sure you want to delete this user account?')) return;
+      try {
+        const res = await fetchWithAuth(`/api/admin/users/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast('🗑️ User account deleted');
+          loadUsers();
+        } else {
+          showToast(`❌ ${data.error || 'Failed to delete user'}`);
+        }
+      } catch (err) {
+        console.error('Delete user error:', err);
       }
     }
 
@@ -463,11 +592,43 @@
       fetchStats();
       loadApplications();
       loadJobsList();
+      const user = getCurrentUser();
+      if (user && user.role === 'admin') {
+        loadUsers();
+      }
       showToast('🔄 Dashboard refreshed');
     }
 
-    // Initialize
-    refreshAll();
+    // Authentication Guard & UI Role Adaptor
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = getCurrentUser();
+      if (!user) {
+        alert('Please sign in to access your portal dashboard.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const titleEl = document.querySelector('.page-title');
+      const subtitleEl = document.querySelector('.page-subtitle');
+      const appsTabBtn = document.getElementById('appsTabBtn');
+      const usersTabBtn = document.getElementById('usersTabBtn');
+
+      if (user.role === 'user') {
+        titleEl.textContent = 'Candidate Application Tracking';
+        subtitleEl.textContent = 'View your active job applications, recruiter review status, and submissions.';
+        appsTabBtn.childNodes[0].nodeValue = 'My Applications ';
+      } else if (user.role === 'recruiter') {
+        titleEl.textContent = 'Recruiter Hiring Pipeline';
+        subtitleEl.textContent = `Review candidates for ${user.company || 'your postings'}, change application stages, and publish openings.`;
+      } else if (user.role === 'admin') {
+        titleEl.textContent = 'Administrator Operations Control Center';
+        subtitleEl.textContent = 'Master administration: full access to open jobs, candidate pipelines, and user accounts.';
+        if (usersTabBtn) usersTabBtn.style.display = 'inline-block';
+      }
+
+      refreshAll();
+    });
   </script>
+  <script src="auth.js"></script>
 </body>
 </html>
